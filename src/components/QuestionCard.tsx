@@ -24,25 +24,35 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     factual: {
       bg: 'bg-sky-100 text-sky-900 border-sky-300',
       icon: BookCheck,
-      label: '🎯 사실 확인 질문 (Factual Question)',
+      categoryLabel: '사실 확인 질문',
+      subLabel: 'Factual Question',
     },
     inferential: {
       bg: 'bg-indigo-100 text-indigo-900 border-indigo-300',
       icon: Lightbulb,
-      label: '🧠 문맥 추론 질문 (Inferential Question)',
+      categoryLabel: '문맥 추론 질문',
+      subLabel: 'Inferential Question',
     },
     opinion: {
       bg: 'bg-rose-100 text-rose-900 border-rose-300',
       icon: MessageSquare,
-      label: '💡 나의 생각 및 의견 (Personal Opinion)',
+      categoryLabel: '나의 생각 및 의견',
+      subLabel: 'Personal Opinion',
     },
   }[question.type] || {
     bg: 'bg-amber-100 text-amber-900 border-amber-300',
     icon: Sparkles,
-    label: '독해 이해도 질문',
+    categoryLabel: '독해 이해도 질문',
+    subLabel: 'Comprehension',
   };
 
   const IconComponent = typeBadgeStyles.icon;
+
+  const difficultyBadge = {
+    EASY: { text: '난이도: 하 (기초)', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+    MEDIUM: { text: '난이도: 중 (표준)', color: 'bg-amber-100 text-amber-900 border-amber-300' },
+    HARD: { text: '난이도: 상 (심화)', color: 'bg-rose-100 text-rose-900 border-rose-300' },
+  }[question.difficulty || 'MEDIUM'];
 
   const wordCount = answerText.trim() ? answerText.trim().split(/\s+/).length : 0;
   const charCount = answerText.length;
@@ -53,11 +63,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       {/* Question Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         
-        {/* Type Badge */}
-        <span className={`px-3.5 py-1.5 rounded-2xl text-xs font-serif font-bold border-2 flex items-center gap-1.5 shadow-2xs ${typeBadgeStyles.bg}`}>
-          <IconComponent className="w-3.5 h-3.5" />
-          <span>질문 {index + 1}. {typeBadgeStyles.label}</span>
-        </span>
+        {/* Type Badge & Difficulty Tag */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`px-3.5 py-1.5 rounded-2xl text-xs font-serif font-bold border-2 flex items-center gap-1.5 shadow-2xs ${typeBadgeStyles.bg}`}>
+            <IconComponent className="w-3.5 h-3.5 shrink-0" />
+            <span>질문 {index + 1}. [{typeBadgeStyles.categoryLabel}] {typeBadgeStyles.subLabel}</span>
+          </span>
+
+          <span className={`px-2.5 py-1 rounded-xl text-xs font-sans font-semibold border ${difficultyBadge.color}`}>
+            {difficultyBadge.text}
+          </span>
+        </div>
 
         {/* Word Counter */}
         <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">

@@ -4,9 +4,10 @@ import { ChapterSelector } from './components/ChapterSelector';
 import { StudentForm } from './components/StudentForm';
 import { TeacherDashboard } from './components/TeacherDashboard';
 import { GasSetupModal } from './components/GasSetupModal';
+import { AdminAuthModal } from './components/AdminAuthModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { CHAPTERS, getChapterByNumber, getRandomQuestionsForChapter } from './data/chapters';
-import { Question, HouseType, Submission, GasConfig } from './types';
+import { Question, HouseType, Submission, GasConfig, DifficultyLevel } from './types';
 import { Sparkles, Scroll, BookOpen, Feather, Wand2 } from 'lucide-react';
 
 import hogwartsCastleImg from './assets/images/hogwarts_castle_banner_1785475882007.jpg';
@@ -16,6 +17,15 @@ export default function App() {
   const [selectedChapterNum, setSelectedChapterNum] = useState<number>(1);
   const [selectedHouse, setSelectedHouse] = useState<HouseType>('Gryffindor');
   const [studentName, setStudentName] = useState<string>('');
+
+  // Difficulty Level State (Default: MEDIUM - 중)
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('MEDIUM');
+
+  // Admin Auth State (Password: 2026)
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
+    return sessionStorage.getItem('hogwarts_admin_unlocked') === 'true';
+  });
+  const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState<boolean>(false);
 
   // Questions for current chapter
   const [questions, setQuestions] = useState<Question[]>(getRandomQuestionsForChapter(1));
@@ -51,9 +61,10 @@ export default function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Fetch Questions for a Chapter (calls Express server Gemini route with fallback)
+  // Fetch Questions for a Chapter with Difficulty Level
   const fetchQuestionsForChapter = useCallback(
-    async (chapterNum: number, forceAiRegen: boolean = false) => {
+    async (chapterNum: number, forceAiRegen: boolean = false, targetDifficulty?: DifficultyLevel) => {
+      const levelToFetch = targetDifficulty || selectedDifficulty;
       setIsAiLoading(true);
       setHasPreviousMatch(false);
 
@@ -64,6 +75,7 @@ export default function App() {
           body: JSON.stringify({
             chapterNumber: chapterNum,
             studentName: studentName.trim(),
+            difficultyLevel: levelToFetch,
             forceRegenerate: forceAiRegen,
           }),
         });
@@ -82,11 +94,12 @@ export default function App() {
           setAnswers(initialAnswers);
 
           if (forceAiRegen) {
-            addToast('success', '✨ 무작위 질문 출제 완료!', `Chapter ${chapterNum} 5개 질문 세트가 새로 출제되었습니다.`);
+            const diffText = levelToFetch === 'EASY' ? '하(기초)' : levelToFetch === 'MEDIUM' ? '중(표준)' : '상(심화)';
+            addToast('success', '✨ 맞춤 질문 출제 완료!', `Chapter ${chapterNum} [난이도: ${diffText}] 5개 질문 세트가 새로 생성되었습니다.`);
           }
         } else {
           // Randomized Curated fallback
-          const randQuestions = getRandomQuestionsForChapter(chapterNum);
+          const randQuestions = getRandomQuestionsForChapter(chapterNum).map((q) => ({ ...q, difficulty: levelToFetch }));
           setQuestions(randQuestions);
           setIsAiGenerated(false);
           const initialAnswers: Record<string, string> = {};
@@ -97,7 +110,7 @@ export default function App() {
         }
       } catch (err: any) {
         console.error('Error fetching questions:', err);
-        const randQuestions = getRandomQuestionsForChapter(chapterNum);
+        const randQuestions = getRandomQuestionsForChapter(chapterNum).map((q) => ({ ...q, difficulty: levelToFetch }));
         setQuestions(randQuestions);
         setIsAiGenerated(false);
         const initialAnswers: Record<string, string> = {};
@@ -110,7 +123,7 @@ export default function App() {
         setIsAiLoading(false);
       }
     },
-    [studentName]
+    [studentName, selectedDifficulty]
   );
 
   // Fetch GAS Config & Submissions on Mount
@@ -164,10 +177,43 @@ export default function App() {
     }
   };
 
-  // Chapter Selection Change Handler
+  // Tab Switch Handler with Admin Password Protection (2026)
+  const handleTabChange = (tab: 'student' | 'teacher') => {
+    if (tab === 'teacher') {
+      if (isAdminUnlocked) {
+        setActiveTab('teacher');
+      } else {
+        setIsAdminAuthModalOpen(true);
+      }
+    } else {
+      setActiveTab('student');
+    }
+  };
+
+  const handleAdminAuthSuccess = () => {
+    setIsAdminUnlocked(true);
+    sessionStorage.setItem('hogwarts_admin_unlocked', 'true');
+    setActiveTab('teacher');
+    setIsAdminAuthModalOpen(false);
+    addToast('success', '🔒 관리자 인증 성공 (Admin Access)', '비밀번호(2026)가 확인되었습니다. 관리자 대시보드에 접속합니다.');
+  };
+
+  const handleLockAdmin = () => {
+    setIsAdminUnlocked(false);
+    sessionStorage.removeItem('hogwarts_admin_unlocked');
+    setActiveTab('student');
+    addToast('info', '🔒 관리자 세션 잠금', '관리자 모드가 안전하게 잠겼습니다.');
+  };
+
+  // Chapter & Difficulty Selection Handlers
   const handleSelectChapter = (num: number) => {
     setSelectedChapterNum(num);
-    fetchQuestionsForChapter(num);
+    fetchQuestionsForChapter(num, false, selectedDifficulty);
+  };
+
+  const handleSelectDifficulty = (level: DifficultyLevel) => {
+    setSelectedDifficulty(level);
+    fetchQuestionsForChapter(selectedChapterNum, true, level);
   };
 
   // Answer Textarea Change Handler
@@ -369,7 +415,7 @@ export default function App() {
         {/* Header */}
         <Header
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
           selectedHouse={selectedHouse}
           setSelectedHouse={setSelectedHouse}
           onOpenGasModal={() => setIsGasModalOpen(true)}
@@ -408,7 +454,9 @@ export default function App() {
               <ChapterSelector
                 selectedChapterNum={selectedChapterNum}
                 onSelectChapter={handleSelectChapter}
-                onRegenerateAiQuestions={() => fetchQuestionsForChapter(selectedChapterNum, true)}
+                selectedDifficulty={selectedDifficulty}
+                onSelectDifficulty={handleSelectDifficulty}
+                onRegenerateAiQuestions={() => fetchQuestionsForChapter(selectedChapterNum, true, selectedDifficulty)}
                 isAiLoading={isAiLoading}
                 isAiGenerated={isAiGenerated}
               />
@@ -438,6 +486,7 @@ export default function App() {
               onSaveFeedback={handleSaveTeacherFeedback}
               onRefreshSubmissions={fetchSubmissions}
               isLoading={isSubmissionsLoading}
+              onLockAdmin={handleLockAdmin}
             />
           )}
 
@@ -464,6 +513,13 @@ export default function App() {
         onClose={() => setIsGasModalOpen(false)}
         currentGasUrl={gasConfig.webAppUrl}
         onSaveGasUrl={handleSaveGasUrl}
+      />
+
+      {/* Admin Security Password Modal (2026) */}
+      <AdminAuthModal
+        isOpen={isAdminAuthModalOpen}
+        onClose={() => setIsAdminAuthModalOpen(false)}
+        onSuccess={handleAdminAuthSuccess}
       />
 
       {/* Toast Notifications */}

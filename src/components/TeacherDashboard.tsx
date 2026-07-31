@@ -7,6 +7,7 @@ interface TeacherDashboardProps {
   onSaveFeedback: (submissionId: string, grade: 'O' | 'E' | 'A' | 'P' | 'D' | 'T', feedback: string) => void;
   onRefreshSubmissions: () => void;
   isLoading: boolean;
+  onLockAdmin?: () => void;
 }
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
@@ -14,6 +15,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   onSaveFeedback,
   onRefreshSubmissions,
   isLoading,
+  onLockAdmin,
 }) => {
   const [selectedChapterFilter, setSelectedChapterFilter] = useState<number | 'ALL'>('ALL');
   const [selectedHouseFilter, setSelectedHouseFilter] = useState<HouseType | 'ALL'>('ALL');
@@ -103,33 +105,42 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       <div className="bg-white/95 border-2 border-indigo-200 rounded-3xl p-5 sm:p-6 shadow-xl shadow-indigo-100/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-serif uppercase tracking-wider text-indigo-800 font-bold mb-1">
-            <GraduationCap className="w-4.5 h-4.5 text-indigo-600" /> 교사 관리자 포털 (Teacher Portal)
+            <GraduationCap className="w-4.5 h-4.5 text-indigo-600" /> 관리자 포털 (Admin Portal)
           </div>
           <h2 className="text-xl sm:text-2xl font-serif font-extrabold text-slate-800">
-            학생 리딩 제출 내역 및 피드백 채점
+            학생 리딩 제출 내역 및 성적 관리
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 font-sans">
-            제출된 학생 답변을 확인하고 O, E, A 성적 부여 및 개별 교사 피드백을 전달하세요.
+            제출된 학생 답변을 확인하고 O, E, A 성적 부여 및 개별 피드백을 전달하세요.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={onRefreshSubmissions}
             disabled={isLoading}
-            className="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs"
+            className="px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs"
           >
-            <span>🔄 최신 내역 새로고침</span>
+            <span>🔄 새로고침</span>
           </button>
 
           <button
             onClick={handleExportCsv}
             disabled={submissions.length === 0}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-900 rounded-2xl text-xs font-bold transition-all shadow-md flex items-center gap-2 disabled:opacity-50"
+            className="px-3.5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-900 rounded-2xl text-xs font-bold transition-all shadow-md flex items-center gap-2 disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
             <span>CSV 성적 내보내기</span>
           </button>
+
+          {onLockAdmin && (
+            <button
+              onClick={onLockAdmin}
+              className="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+            >
+              <span>🔒 관리자 잠금</span>
+            </button>
+          )}
         </div>
       </div>
 

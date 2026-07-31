@@ -110,7 +110,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className={`w-2 h-2 rounded-full ${isGasConfigured ? 'bg-emerald-500' : 'bg-amber-500 animate-ping'}`} />
             </button>
 
-            {/* Tab Navigation: Student vs Teacher */}
+            {/* Tab Navigation: Student vs Admin */}
             <div className="flex items-center p-1 bg-slate-100/80 rounded-2xl border border-slate-200">
               <button
                 onClick={() => setActiveTab('student')}
@@ -128,12 +128,12 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => setActiveTab('teacher')}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-serif font-bold transition-all flex items-center gap-1.5 ${
                   activeTab === 'teacher'
-                    ? 'bg-gradient-to-r from-indigo-400 to-indigo-500 text-white shadow-md'
+                    ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-md'
                     : 'text-slate-600 hover:text-indigo-800'
                 }`}
               >
                 <GraduationCap className="w-3.5 h-3.5" />
-                <span>교사 관리자</span>
+                <span>관리자</span>
               </button>
             </div>
 

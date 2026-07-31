@@ -1,4 +1,5 @@
 export type QuestionType = 'factual' | 'inferential' | 'opinion';
+export type DifficultyLevel = 'EASY' | 'MEDIUM' | 'HARD';
 
 export interface Question {
   id: string;
@@ -8,6 +9,7 @@ export interface Question {
   questionText: string;
   hint?: string;
   sampleKeywords?: string[];
+  difficulty?: DifficultyLevel;
 }
 
 export interface ChapterInfo {

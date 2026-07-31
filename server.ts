@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import { GoogleGenAI, Type } from "@google/genai";
 import { getChapterByNumber, getRandomQuestionsForChapter, CHAPTERS } from "./src/data/chapters.js";
-import { Submission, Question } from "./src/types.js";
+import { Submission, Question, DifficultyLevel } from "./src/types.js";
 
 const app = express();
 const PORT = 3000;
@@ -81,18 +81,20 @@ function getGeminiAi() {
 
 // API Routes
 
-// 1. Generate 5 Reading Questions using Gemini Server-Side (with high temperature for student randomization)
+// 1. Generate 5 Reading Questions using Gemini Server-Side (with difficulty level support)
 app.post("/api/gemini/questions", async (req, res) => {
-  const { chapterNumber, studentName } = req.body;
+  const { chapterNumber, studentName, difficultyLevel } = req.body;
   const num = parseInt(chapterNumber) || 1;
+  const level: DifficultyLevel = (['EASY', 'MEDIUM', 'HARD'].includes(difficultyLevel) ? difficultyLevel : 'MEDIUM') as DifficultyLevel;
   const chapter = getChapterByNumber(num);
 
   const ai = getGeminiAi();
   if (!ai) {
     console.log("No GEMINI_API_KEY found, returning randomized curated questions.");
+    const curatedQuestions = getRandomQuestionsForChapter(num).map((q) => ({ ...q, difficulty: level }));
     return res.json({
       success: true,
-      questions: getRandomQuestionsForChapter(num),
+      questions: curatedQuestions,
       chapterNumber: num,
       isAiGenerated: false,
       notice: "Using randomized curated question set.",
@@ -100,27 +102,44 @@ app.post("/api/gemini/questions", async (req, res) => {
   }
 
   try {
-    const prompt = `You are an expert high school English teacher creating reading comprehension questions for Korean High School EFL (English as a Foreign Language) students.
+    const difficultyGuide = {
+      EASY: `Target Difficulty: EASY (난이도: 하 - 기초 독해)
+- Use simple English vocabulary and short, clear sentence structures.
+- Questions should focus on direct, easily recognizable facts or simple inferences in Chapter ${chapter.number}.
+- Provide very helpful, encouraging hints with clear Korean translations in parentheses.`,
+      MEDIUM: `Target Difficulty: MEDIUM (난이도: 중 - 고교 표준 독해)
+- Standard Korean high school EFL (English as a Foreign Language) reading level.
+- Balanced vocabulary, moderate sentence length, and clear logical inferences.
+- Hints should guide students to key paragraphs or scenes with Korean clues.`,
+      HARD: `Target Difficulty: HARD (난이도: 상 - 심화 독해 & 비판적 사고)
+- Advanced high school EFL reading level.
+- Use richer academic vocabulary, deeper inferential character analysis, and thought-provoking opinion prompts.
+- Hints should encourage critical thinking and textual synthesis.`,
+    }[level];
+
+    const prompt = `You are an expert high school English teacher creating reading comprehension questions for Korean High School EFL students.
 The students are reading "Harry Potter and the Sorcerer's Stone" Chapter ${chapter.number}: "${chapter.title}".
 Chapter Summary/Context: ${chapter.summaryContext}
 ${studentName ? `Student Name: ${studentName}` : ""}
 
-Please create 5 FRESH, UNIQUE, RANDOMIZED comprehension questions IN ENGLISH suited for upper-intermediate Korean EFL high school students.
-Pick DIFFERENT key details, dialogue, scenes, or character actions from Chapter ${chapter.number} so every student receives a unique set of questions!
+${difficultyGuide}
 
-1. Question 1 (Factual / Fact Check): A literal comprehension question about a specific event, dialogue, or detail in Chapter ${chapter.number}.
-2. Question 2 (Factual / Fact Check): Another literal comprehension question focusing on a character action or item in Chapter ${chapter.number}.
-3. Question 3 (Inferential / Context): An inferential thinking question requiring students to analyze character motivation, cause-and-effect, or subtle context.
+Please create 5 FRESH, UNIQUE, RANDOMIZED comprehension questions IN ENGLISH for Chapter ${chapter.number}.
+Pick DIFFERENT key details, dialogue, scenes, or character actions so every generation is unique!
+
+1. Question 1 (Factual / Fact Check): A literal comprehension question about a specific event, dialogue, or detail.
+2. Question 2 (Factual / Fact Check): Another literal comprehension question focusing on a character action or item.
+3. Question 3 (Inferential / Context): An inferential thinking question analyzing character motivation or cause-and-effect.
 4. Question 4 (Inferential / Context): Another inferential thinking question requiring reasoning or character analysis.
-5. Question 5 (Personal Opinion / Reflection): A critical thinking personal opinion question connecting the chapter's themes to the student's own life or values.
+5. Question 5 (Personal Opinion / Reflection): A critical thinking personal opinion question connecting themes to student reflection.
 
 Requirements:
-- Questions MUST be written in clear, natural, engaging English suitable for Korean high school EFL learners.
+- Questions MUST be written in clear, engaging English matching the requested ${level} difficulty level.
 - Include a helpful hint for each question (1 sentence in English with a Korean clue in parentheses e.g. "Recall who brought the letter (해그리드의 등장 장면을 상상해보세요)").
 - Respond ONLY with a valid JSON array of 5 objects containing:
   "number" (1-5),
   "type" ("factual", "inferential", or "opinion"),
-  "typeLabel" (e.g. "Factual Question 1 (Fact Check)"),
+  "typeLabel" (e.g. "Factual Question 1"),
   "questionText" (the question in English),
   "hint" (English clue with Korean hint).`;
 
@@ -128,7 +147,7 @@ Requirements:
       model: "gemini-3.6-flash",
       contents: prompt,
       config: {
-        temperature: 1.0, // High temperature to maximize variety and randomization across student requests
+        temperature: 1.0, // High temperature to maximize variety and randomization
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -157,6 +176,7 @@ Requirements:
       typeLabel: q.typeLabel || `Question ${idx + 1}`,
       questionText: q.questionText,
       hint: q.hint || "",
+      difficulty: level,
     }));
 
     return res.json({
@@ -167,10 +187,11 @@ Requirements:
     });
   } catch (error: any) {
     console.error("Gemini Question Generation Error:", error);
-    // Fallback gracefully to randomized default questions
+    // Fallback gracefully to randomized default questions with selected difficulty
+    const fallbackQuestions = getRandomQuestionsForChapter(num).map((q) => ({ ...q, difficulty: level }));
     return res.json({
       success: true,
-      questions: getRandomQuestionsForChapter(num),
+      questions: fallbackQuestions,
       chapterNumber: num,
       isAiGenerated: false,
       errorNotice: "Loaded randomized curated questions.",
