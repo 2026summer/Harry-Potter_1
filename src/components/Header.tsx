@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, GraduationCap, Sparkles, Sheet, Scroll, Wand2 } from 'lucide-react';
+import { BookOpen, GraduationCap, Sparkles, Wand2 } from 'lucide-react';
 import { HouseType } from '../types';
 
 interface HeaderProps {
@@ -7,8 +7,6 @@ interface HeaderProps {
   setActiveTab: (tab: 'student' | 'teacher') => void;
   selectedHouse: HouseType;
   setSelectedHouse: (house: HouseType) => void;
-  onOpenGasModal: () => void;
-  isGasConfigured: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -16,8 +14,6 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveTab,
   selectedHouse,
   setSelectedHouse,
-  onOpenGasModal,
-  isGasConfigured,
 }) => {
   const houseColors: Record<HouseType, { bg: string; text: string; border: string; emblem: string; label: string }> = {
     Gryffindor: {
@@ -95,20 +91,6 @@ export const Header: React.FC<HeaderProps> = ({
                 );
               })}
             </div>
-
-            {/* Google Sheets Config Button */}
-            <button
-              onClick={onOpenGasModal}
-              className={`px-3 py-1.5 rounded-2xl text-xs font-bold border-2 flex items-center gap-1.5 transition-all shadow-sm ${
-                isGasConfigured
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
-                  : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
-              }`}
-            >
-              <Sheet className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{isGasConfigured ? '구글 시트 연동됨' : '구글 시트 연동하기'}</span>
-              <span className={`w-2 h-2 rounded-full ${isGasConfigured ? 'bg-emerald-500' : 'bg-amber-500 animate-ping'}`} />
-            </button>
 
             {/* Tab Navigation: Student vs Admin */}
             <div className="flex items-center p-1 bg-slate-100/80 rounded-2xl border border-slate-200">

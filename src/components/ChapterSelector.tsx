@@ -165,7 +165,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
               </span>
             ) : (
               <span className="text-slate-700 font-semibold flex items-center gap-1.5">
-                <Feather className="w-3.5 h-3.5 text-amber-600" /> 고교 EFL 엄선 질문 세트
+                <Feather className="w-3.5 h-3.5 text-amber-600" /> 엄선 독해 질문 세트
               </span>
             )}
           </div>
@@ -183,7 +183,7 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
             </span>
             <span className="text-slate-800">{currentChapter.title}</span>
           </h2>
-          <span className="text-xs text-amber-700 font-serif">고교 영어 EFL 원서 읽기 과정</span>
+          <span className="text-xs text-amber-700 font-serif">Harry Potter & The Sorcerer's Stone</span>
         </div>
 
         <div className="flex flex-col md:flex-row items-center gap-4 bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200/60">

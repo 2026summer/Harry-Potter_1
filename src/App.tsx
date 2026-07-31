@@ -9,7 +9,7 @@ import { SelfScoreReportModal } from './components/SelfScoreReportModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { CHAPTERS, getChapterByNumber, getRandomQuestionsForChapter } from './data/chapters';
 import { Question, HouseType, Submission, GasConfig, DifficultyLevel } from './types';
-import { Sparkles, Scroll, BookOpen, Feather, Wand2 } from 'lucide-react';
+import { Sparkles, Scroll, BookOpen, Feather, Wand2, Sheet } from 'lucide-react';
 
 import hogwartsCastleImg from './assets/images/hogwarts_castle_banner_1785475882007.jpg';
 
@@ -423,31 +423,29 @@ export default function App() {
           setActiveTab={handleTabChange}
           selectedHouse={selectedHouse}
           setSelectedHouse={setSelectedHouse}
-          onOpenGasModal={() => setIsGasModalOpen(true)}
-          isGasConfigured={gasConfig.isConfigured}
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+        <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6">
           
-          {/* Hero Banner Card */}
-          <div className="relative overflow-hidden rounded-3xl border-2 border-amber-300 shadow-xl bg-slate-900 group">
+          {/* Hero Banner Card (Compact Height) */}
+          <div className="relative overflow-hidden rounded-2xl border-2 border-amber-300 shadow-md bg-slate-900 group">
             <img
               src={hogwartsCastleImg}
               alt="Hogwarts Castle"
               referrerPolicy="no-referrer"
-              className="w-full h-48 sm:h-64 object-cover object-center opacity-90 group-hover:scale-105 transition-transform duration-700"
+              className="w-full h-28 sm:h-36 object-cover object-center opacity-85 group-hover:scale-105 transition-transform duration-700"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/50 to-transparent flex flex-col justify-end p-5 sm:p-7">
-              <div className="flex items-center gap-2 text-amber-300 font-serif text-xs sm:text-sm font-bold tracking-wider uppercase mb-1">
-                <Sparkles className="w-4 h-4 text-amber-400" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/60 to-transparent flex flex-col justify-end p-3.5 sm:p-4.5">
+              <div className="flex items-center gap-1.5 text-amber-300 font-serif text-[11px] sm:text-xs font-bold tracking-wider uppercase mb-0.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>Hogwarts Reading Journal</span>
               </div>
-              <h2 className="text-xl sm:text-3xl font-serif font-extrabold text-white tracking-tight drop-shadow-md">
-                2026학년도 2학기 영어Ⅱ 수행평가 <span className="text-amber-300 font-medium">| Harry Potter & The Sorcerer's Stone</span>
+              <h2 className="text-base sm:text-xl font-serif font-extrabold text-white tracking-tight drop-shadow-md">
+                2026학년도 2학기 영어Ⅱ 수행평가 <span className="text-amber-300 font-normal text-sm sm:text-base">| Harry Potter & The Sorcerer's Stone</span>
               </h2>
-              <p className="text-xs sm:text-sm text-amber-100/90 mt-1 max-w-2xl font-sans leading-relaxed">
-                호그와트 마법학교 영어 독서록에 오신 것을 환영합니다! 챕터별 원서를 읽고 AI 맞춤 독해 질문에 영문 저널을 작성하세요.
+              <p className="text-[11px] sm:text-xs text-amber-100/90 mt-0.5 max-w-2xl font-sans leading-snug">
+                호그와트 영어 독서록에 오신 것을 환영합니다! 챕터별 원서를 읽고 AI 맞춤 질문에 영문 저널을 작성하세요.
               </p>
             </div>
           </div>
@@ -497,16 +495,29 @@ export default function App() {
 
         </main>
 
-        {/* Pastel Footer */}
-        <footer className="border-t border-amber-200/80 bg-white/80 backdrop-blur-md py-6 mt-12 text-center text-xs text-slate-600 font-serif">
+        {/* Pastel Footer with Google Sheets Link */}
+        <footer className="border-t border-amber-200/80 bg-white/80 backdrop-blur-md py-5 mt-10 text-xs text-slate-600 font-serif">
           <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-amber-800 font-bold">
               <Feather className="w-4 h-4 text-amber-600" />
               <span>호그와트 영어 독서록 • 해리포터와 마법사의 돌 (Harry Potter & The Sorcerer's Stone)</span>
             </div>
-            <p className="text-slate-500 font-sans">
-              Google Gemini AI & Google Apps Script 자동 수집 연동
-            </p>
+
+            <div className="flex items-center gap-3">
+              {/* Google Sheets Config Button (Moved to Bottom) */}
+              <button
+                onClick={() => setIsGasModalOpen(true)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer ${
+                  gasConfig.isConfigured
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                    : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+                }`}
+              >
+                <Sheet className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{gasConfig.isConfigured ? '구글 시트 연동 관리' : '구글 시트 연동하기'}</span>
+                <span className={`w-2 h-2 rounded-full ${gasConfig.isConfigured ? 'bg-emerald-500' : 'bg-amber-500 animate-ping'}`} />
+              </button>
+            </div>
           </div>
         </footer>
 
