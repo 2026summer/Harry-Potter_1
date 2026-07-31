@@ -156,9 +156,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           </label>
 
           <div className="grid grid-cols-1 gap-2">
-            {question.options.map((optText, optIdx) => {
-              const optionLabel = `(${optIdx + 1}) ${optText}`;
-              const isSelected = answerText === optionLabel || answerText === optText || answerText.startsWith(`(${optIdx + 1})`);
+            {question.options.map((rawOptText, optIdx) => {
+              const cleanedOptText = rawOptText.replace(/^(Option|option)\s*([A-D1-4])?\s*[:\.-]?\s*/i, '').trim();
+              const optionLabel = `(${optIdx + 1}) ${cleanedOptText}`;
+              const isSelected = answerText === optionLabel || answerText === cleanedOptText || answerText.startsWith(`(${optIdx + 1})`);
 
               return (
                 <button
@@ -177,7 +178,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                   }`}>
                     {optIdx + 1}
                   </span>
-                  <span className="text-xs sm:text-sm leading-relaxed flex-1">{optText}</span>
+                  <span className="text-xs sm:text-sm leading-relaxed flex-1">{cleanedOptText}</span>
                 </button>
               );
             })}
@@ -188,10 +189,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         <div className="relative space-y-1.5">
           <label className="block text-xs font-bold text-amber-900 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
-              <MessageSquare className="w-4 h-4 text-amber-600" /> [서술형/단답형] 한국어로 정성껏 답변을 작성하세요
+              <MessageSquare className="w-4 h-4 text-amber-600" /> [서술형/단답형] 우리말 또는 영어로 정성껏 답변을 작성하세요
             </span>
             <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-              ✍️ 한국어 작성
+              ✍️ 우리말 또는 영어로 작성
             </span>
           </label>
 
@@ -199,7 +200,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             value={answerText}
             onChange={(e) => onAnswerChange(e.target.value)}
             disabled={disabled}
-            placeholder={`질문 ${index + 1}에 대한 답변을 한국어로 작성하세요... (원서의 내용과 나의 생각을 자유롭게 기술합니다)`}
+            placeholder={`질문 ${index + 1}에 대한 답변을 우리말 또는 영어로 작성하세요... (원서의 내용과 나의 생각을 자유롭게 기술합니다)`}
             rows={3}
             className="w-full bg-amber-50/30 text-slate-900 placeholder-slate-400 font-sans text-sm sm:text-base border-2 border-amber-200 rounded-2xl p-3.5 focus:outline-none focus:border-amber-400 focus:bg-white focus:ring-4 focus:ring-amber-100 transition-all resize-y disabled:opacity-50 shadow-inner"
           />

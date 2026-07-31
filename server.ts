@@ -126,13 +126,13 @@ ${difficultyGuide}
 
 Format Mix Requirement (50% Multiple Choice / 50% Short Answer or Essay):
 - Questions 1, 2, 3: "multiple_choice" (4-option multiple choice questions in English, with 1 correct answer index 0-3, and a detailed Korean explanation of why the answer is correct).
-- Questions 4, 5: "short_answer" (Open-ended short answer or reflective essay questions where students write their answers in Korean).
+- Questions 4, 5: "short_answer" (Open-ended short answer or reflective essay questions where students write their answers in Korean or English).
 
-Important Language Rule:
+Important Language & Option Formatting Rules:
 - The question texts and multiple-choice options are written in clear, engaging English matching the requested ${level} difficulty level.
+- DO NOT prefix option strings with "Option A:", "Option 1:", etc. Return ONLY the option text itself.
 - Provide a natural Korean translation ("koreanTranslation") for every question text.
-- Provide a detailed Korean explanation ("explanation") for every question (explaining the correct option for multiple choice, or providing a model answer example & key points in Korean for short answer questions).
-- Students will answer all questions in Korean (한국어).
+- Provide a detailed Korean explanation ("explanation") for every question (explaining the correct option for multiple choice, or providing key evaluation points in Korean for short answer questions).
 
 Respond ONLY with a valid JSON array of 5 objects containing:
 1. "number" (1-5)
@@ -141,9 +141,9 @@ Respond ONLY with a valid JSON array of 5 objects containing:
 4. "typeLabel" (e.g. "객관식 독해 1", "서술형 추론 4")
 5. "questionText" (the question in English)
 6. "koreanTranslation" (natural Korean translation of questionText)
-7. "options" (array of 4 string options in English ONLY for multiple_choice, or empty array [] for short_answer)
+7. "options" (array of 4 string options in English WITHOUT "Option A:" prefixes for multiple_choice, or empty array [] for short_answer)
 8. "correctOptionIndex" (integer 0, 1, 2, or 3 for multiple_choice, or -1 for short_answer)
-9. "explanation" (detailed answer explanation and model answer guide in Korean)
+9. "explanation" (detailed answer explanation and model guide in Korean)
 10. "hint" (English clue with Korean hint) `;
 
     const response = await ai.models.generateContent({
@@ -199,7 +199,9 @@ Respond ONLY with a valid JSON array of 5 objects containing:
       typeLabel: q.typeLabel || (idx < 3 ? `객관식 질문 ${idx + 1}` : `서술형 질문 ${idx + 1}`),
       questionText: q.questionText,
       koreanTranslation: q.koreanTranslation || "",
-      options: Array.isArray(q.options) ? q.options : [],
+      options: Array.isArray(q.options)
+        ? q.options.map((opt: string) => typeof opt === 'string' ? opt.replace(/^(Option|option)\s*([A-D1-4])?\s*[:\.-]?\s*/i, '').trim() : '')
+        : [],
       correctOptionIndex: typeof q.correctOptionIndex === "number" ? q.correctOptionIndex : 0,
       explanation: q.explanation || "",
       hint: q.hint || "",

@@ -25,10 +25,10 @@ export const SelfScoreReportModal: React.FC<SelfScoreReportModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  // Calculate Scores
+  // Calculate Scores (Only Multiple Choice is auto-graded as requested)
   let correctCount = 0;
   let multipleChoiceTotal = 0;
-  let shortAnswerCount = 0;
+  let shortAnswerSubmittedCount = 0;
 
   questions.forEach((q) => {
     if (q.format === 'multiple_choice') {
@@ -42,22 +42,13 @@ export const SelfScoreReportModal: React.FC<SelfScoreReportModalProps> = ({
       }
     } else {
       if ((answers[q.id] || '').trim().length > 0) {
-        shortAnswerCount++;
+        shortAnswerSubmittedCount++;
       }
     }
   });
 
-  const mcScore = multipleChoiceTotal > 0 ? Math.round((correctCount / multipleChoiceTotal) * 60) : 60;
-  const saTotalQuestions = questions.length - multipleChoiceTotal;
-  const saScore = saTotalQuestions > 0 ? Math.round((shortAnswerCount / saTotalQuestions) * 40) : 40;
-  const totalScore = mcScore + saScore;
-
-  const houseColor = {
-    Gryffindor: 'from-amber-500 to-rose-600 border-amber-300 text-amber-900',
-    Ravenclaw: 'from-indigo-500 to-sky-600 border-indigo-300 text-indigo-900',
-    Hufflepuff: 'from-amber-400 to-yellow-500 border-amber-200 text-amber-950',
-    Slytherin: 'from-emerald-600 to-teal-700 border-emerald-300 text-emerald-950',
-  }[studentHouse];
+  const totalQuestions = questions.length;
+  const shortAnswerTotal = totalQuestions - multipleChoiceTotal;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
@@ -75,39 +66,37 @@ export const SelfScoreReportModal: React.FC<SelfScoreReportModalProps> = ({
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold font-serif shadow-sm">
             <Award className="w-4 h-4 text-amber-600" />
-            <span>수행평가 제출 결과 & 자동 채점 보고서</span>
+            <span>수행평가 제출 완료 & 자가 채점 결과 리포트</span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-serif font-extrabold text-slate-800">
             {studentName} 학생의 Chapter {chapterNumber} 성적 리포트
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 font-sans">
-            제출이 완료되었습니다! 아래에서 내 점수와 문항별 정답 및 상세 해설을 확인하세요.
+            제출이 완료되었습니다! 아래에서 객관식 정답 개수와 문항별 상세 해설을 확인해보세요.
           </p>
         </div>
 
         {/* Score Summary Box */}
         <div className="bg-gradient-to-r from-amber-500/10 via-amber-100/50 to-rose-500/10 border-2 border-amber-300 rounded-2xl p-5 text-center shadow-inner space-y-3">
-          <div className="flex justify-center items-center gap-2">
-            <span className="text-sm font-bold text-slate-700">최종 획득 점수</span>
-            <span className="text-3xl sm:text-4xl font-extrabold text-amber-600 font-serif">
-              {totalScore} <span className="text-base text-slate-600 font-normal">/ 100점</span>
-            </span>
+          <div className="flex flex-col items-center justify-center gap-1">
+            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">객관식 자동 채점 결과</span>
+            <div className="text-3xl sm:text-4xl font-extrabold text-amber-600 font-serif flex items-baseline gap-1">
+              <span>{correctCount}</span>
+              <span className="text-2xl text-slate-600 font-normal">/ {multipleChoiceTotal}</span>
+              <span className="text-sm font-sans font-bold text-slate-700 ml-1">개 맞춤</span>
+              <span className="text-xs text-slate-500 font-normal ml-2">(전체 {correctCount}/{totalQuestions})</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 max-w-md mx-auto text-xs sm:text-sm">
-            <div className="bg-white/80 border border-amber-200 p-2.5 rounded-xl font-medium">
-              <span className="text-slate-600 block text-xs">객관식 정답률</span>
-              <span className="font-bold text-amber-800">
-                {correctCount} / {multipleChoiceTotal} 문항 ({mcScore}점)
-              </span>
+          <div className="bg-white/90 border border-amber-200 p-3 rounded-xl max-w-md mx-auto text-xs text-slate-800 font-medium space-y-1 shadow-xs">
+            <div className="flex items-center justify-center gap-1.5 text-amber-900 font-bold">
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>서술형 문항 안내</span>
             </div>
-            <div className="bg-white/80 border border-amber-200 p-2.5 rounded-xl font-medium">
-              <span className="text-slate-600 block text-xs">서술형 성의도</span>
-              <span className="font-bold text-emerald-800">
-                {shortAnswerCount} / {saTotalQuestions} 문항 작성 ({saScore}점)
-              </span>
-            </div>
+            <p className="text-slate-700">
+              📝 서술형 문항({shortAnswerSubmittedCount}/{shortAnswerTotal} 작성 완료)은 <span className="font-bold text-amber-900">선생님이 직접 검토할 예정입니다.</span>
+            </p>
           </div>
         </div>
 
@@ -125,6 +114,8 @@ export const SelfScoreReportModal: React.FC<SelfScoreReportModalProps> = ({
               const correctIdx = typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0;
               const correctOptionStr = `(${correctIdx + 1})`;
               const isCorrect = isMc && (studentAns.startsWith(correctOptionStr) || (q.options && studentAns === q.options[correctIdx]));
+              const rawCorrectOpt = q.options && q.options[correctIdx] ? q.options[correctIdx] : '';
+              const cleanedCorrectOpt = rawCorrectOpt.replace(/^(Option|option)\s*([A-D1-4])?\s*[:\.-]?\s*/i, '').trim();
 
               return (
                 <div
@@ -150,16 +141,16 @@ export const SelfScoreReportModal: React.FC<SelfScoreReportModalProps> = ({
                     {isMc ? (
                       isCorrect ? (
                         <span className="px-2.5 py-1 rounded-xl bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 shadow-xs">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> 정답! (+{Math.round(60/multipleChoiceTotal)}점)
+                          <CheckCircle2 className="w-3.5 h-3.5" /> 정답!
                         </span>
                       ) : (
                         <span className="px-2.5 py-1 rounded-xl bg-rose-500 text-white text-xs font-bold flex items-center gap-1 shadow-xs">
-                          <XCircle className="w-3.5 h-3.5" /> 오답 (0점)
+                          <XCircle className="w-3.5 h-3.5" /> 오답
                         </span>
                       )
                     ) : (
                       <span className="px-2.5 py-1 rounded-xl bg-amber-500 text-slate-950 text-xs font-bold flex items-center gap-1 shadow-xs">
-                        <Check className="w-3.5 h-3.5" /> 서술형 제출완료
+                        <Check className="w-3.5 h-3.5" /> 선생님 검토 예정
                       </span>
                     )}
                   </div>
@@ -180,15 +171,17 @@ export const SelfScoreReportModal: React.FC<SelfScoreReportModalProps> = ({
 
                   {/* Correct Answer & Explanation */}
                   <div className="bg-amber-100/60 p-3 rounded-xl border border-amber-300/80 text-xs text-amber-950 leading-relaxed font-sans space-y-1">
-                    {isMc && q.options && q.options[correctIdx] && (
+                    {isMc && cleanedCorrectOpt && (
                       <div className="font-bold text-emerald-900 flex items-center gap-1">
                         <span>💡 정답:</span>
-                        <span>({correctIdx + 1}) {q.options[correctIdx]}</span>
+                        <span>({correctIdx + 1}) {cleanedCorrectOpt}</span>
                       </div>
                     )}
                     <div className="font-medium">
-                      <span className="font-bold text-amber-900">📖 해설 및 모범 답안 가이드:</span>{' '}
-                      {q.explanation || (q.hint ? `(${q.hint})` : '정답과 해설을 참고하여 내 답변을 비교해보세요.')}
+                      <span className="font-bold text-amber-900">📖 해설 및 안내:</span>{' '}
+                      {isMc
+                        ? (q.explanation || '원서 내용과 일치하는 보기입니다.')
+                        : '서술형은 선생님이 직접 검토할 예정입니다.'}
                     </div>
                   </div>
 

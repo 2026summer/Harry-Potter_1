@@ -857,14 +857,16 @@ export function getRandomQuestionsForChapter(num: number): Question[] {
     const format = isMultipleChoice ? 'multiple_choice' : 'short_answer';
 
     // Provide default options & explanations if missing in base static data
-    const options = q.options && q.options.length === 4 ? q.options : (
+    const rawOptions = q.options && q.options.length === 4 ? q.options : (
       isMultipleChoice ? [
-        `Option A: ${q.questionText.slice(0, 30)}...`,
-        `Option B: Key event in Chapter ${num}`,
-        `Option C: Secondary character detail`,
-        `Option D: Unexpected plot twist`
+        `Detailed description regarding ${q.questionText.slice(0, 30)}...`,
+        `Key event described in Chapter ${num}`,
+        `Secondary character's reaction or statement`,
+        `Alternative explanation of the scene`
       ] : []
     );
+
+    const options = rawOptions.map(opt => opt.replace(/^(Option|option)\s*([A-D1-4])?\s*[:\.-]?\s*/i, '').trim());
 
     const correctOptionIndex = typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0;
     const explanation = q.explanation || (
