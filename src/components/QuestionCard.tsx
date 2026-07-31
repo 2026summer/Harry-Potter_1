@@ -19,27 +19,27 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 }) => {
   const [showHint, setShowHint] = useState(false);
 
-  // Badge styling based on question type
+  // Pastel Badge styling based on question type
   const typeBadgeStyles = {
     factual: {
-      bg: 'bg-blue-950/80 text-blue-300 border-blue-500/50',
+      bg: 'bg-sky-100 text-sky-900 border-sky-300',
       icon: BookCheck,
-      label: '사실 확인형 (Factual Question)',
+      label: '🎯 사실 확인 질문 (Factual Question)',
     },
     inferential: {
-      bg: 'bg-purple-950/80 text-purple-300 border-purple-500/50',
+      bg: 'bg-indigo-100 text-indigo-900 border-indigo-300',
       icon: Lightbulb,
-      label: '추론형 (Inferential Question)',
+      label: '🧠 문맥 추론 질문 (Inferential Question)',
     },
     opinion: {
-      bg: 'bg-amber-950/80 text-amber-300 border-amber-500/50',
+      bg: 'bg-rose-100 text-rose-900 border-rose-300',
       icon: MessageSquare,
-      label: '개인 의견형 (Personal Opinion)',
+      label: '💡 나의 생각 및 의견 (Personal Opinion)',
     },
   }[question.type] || {
-    bg: 'bg-slate-800 text-slate-300 border-slate-700',
+    bg: 'bg-amber-100 text-amber-900 border-amber-300',
     icon: Sparkles,
-    label: '이해도 질문',
+    label: '독해 이해도 질문',
   };
 
   const IconComponent = typeBadgeStyles.icon;
@@ -48,33 +48,33 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const charCount = answerText.length;
 
   return (
-    <div className="bg-slate-900/90 border border-amber-500/30 hover:border-amber-500/60 transition-all rounded-2xl p-5 sm:p-6 shadow-xl relative backdrop-blur-md">
+    <div className="bg-white/95 border-2 border-amber-200/90 hover:border-amber-300 transition-all rounded-3xl p-5 sm:p-6 shadow-xl shadow-amber-100/50 relative">
       
       {/* Question Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         
         {/* Type Badge */}
-        <span className={`px-3 py-1 rounded-full text-xs font-serif font-bold border flex items-center gap-1.5 ${typeBadgeStyles.bg}`}>
+        <span className={`px-3.5 py-1.5 rounded-2xl text-xs font-serif font-bold border-2 flex items-center gap-1.5 shadow-2xs ${typeBadgeStyles.bg}`}>
           <IconComponent className="w-3.5 h-3.5" />
-          <span>Q{index + 1}. {typeBadgeStyles.label}</span>
+          <span>질문 {index + 1}. {typeBadgeStyles.label}</span>
         </span>
 
         {/* Word Counter */}
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span>{wordCount} words</span>
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+          <span>{wordCount} 단어</span>
           <span>•</span>
-          <span>{charCount} chars</span>
-          {wordCount >= 10 && (
-            <span className="text-emerald-400 font-semibold flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Good length
+          <span>{charCount} 자</span>
+          {wordCount >= 8 && (
+            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 font-bold flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> 충실한 답변!
             </span>
           )}
         </div>
 
       </div>
 
-      {/* Question Text */}
-      <h3 className="text-base sm:text-lg font-serif font-semibold text-amber-100 leading-snug mb-3">
+      {/* Question Text (English Question with high readability) */}
+      <h3 className="text-base sm:text-lg font-serif font-bold text-slate-800 leading-snug mb-3">
         {question.questionText}
       </h3>
 
@@ -84,15 +84,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <button
             type="button"
             onClick={() => setShowHint(!showHint)}
-            className="text-xs text-amber-400/90 hover:text-amber-300 font-medium flex items-center gap-1 transition-colors"
+            className="text-xs text-amber-800 hover:text-amber-900 font-bold bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1.5 transition-all shadow-2xs"
           >
-            <HelpCircle className="w-3.5 h-3.5" />
-            <span>{showHint ? '힌트 숨기기 (Hide Hint)' : '힌트 보기 (Show Clue / Hint)'}</span>
+            <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
+            <span>{showHint ? '💡 힌트 접기 (Hide Hint)' : '💡 단서 및 힌트 보기 (Show Teacher Clue)'}</span>
           </button>
 
           {showHint && (
-            <div className="mt-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200/90 leading-relaxed font-sans">
-              💡 <span className="font-semibold text-amber-300">Teacher's Hint:</span> {question.hint}
+            <div className="mt-2.5 p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-xs sm:text-sm text-amber-950 leading-relaxed font-sans shadow-inner">
+              <span className="font-bold text-amber-800"> 선생님 힌트:</span> {question.hint}
             </div>
           )}
         </div>
@@ -104,9 +104,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           value={answerText}
           onChange={(e) => onAnswerChange(e.target.value)}
           disabled={disabled}
-          placeholder={`Write your answer in English here... (Tip: Write complete sentences for Q${index + 1})`}
+          placeholder={`영어로 완결된 문장 형태의 답변을 작성하세요... (Write your answer in English for Question ${index + 1})`}
           rows={3}
-          className="w-full bg-slate-950/80 text-slate-100 placeholder-slate-500 font-sans text-sm sm:text-base border border-slate-700/80 rounded-xl p-3.5 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/30 transition-all resize-y disabled:opacity-50 shadow-inner"
+          className="w-full bg-amber-50/30 text-slate-900 placeholder-slate-400 font-sans text-sm sm:text-base border-2 border-amber-200 rounded-2xl p-3.5 focus:outline-none focus:border-amber-400 focus:bg-white focus:ring-4 focus:ring-amber-100 transition-all resize-y disabled:opacity-50 shadow-inner"
         />
       </div>
 

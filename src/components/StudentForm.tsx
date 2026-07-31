@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Question, HouseType, StudentAnswer } from '../types';
+import { Question, HouseType } from '../types';
 import { QuestionCard } from './QuestionCard';
-import { User, Send, Search, Sparkles, Scroll, History, CheckCircle2 } from 'lucide-react';
+import { User, Send, Search, Sparkles, Scroll, History, CheckCircle2, Heart } from 'lucide-react';
+
+import harryReadingImg from '../assets/images/harry_reading_journal_1785475897781.jpg';
 
 interface StudentFormProps {
   chapterNumber: number;
@@ -51,13 +53,23 @@ export const StudentForm: React.FC<StudentFormProps> = ({
     <div className="space-y-6">
       
       {/* Student Identity & Previous Entry Search Card */}
-      <div className="bg-slate-900/90 border border-amber-500/40 rounded-2xl p-5 sm:p-6 shadow-2xl backdrop-blur-md">
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
+      <div className="bg-white/95 border-2 border-amber-200/90 rounded-3xl p-5 sm:p-6 shadow-xl shadow-amber-100/50">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
           
+          {/* Harry Potter Reading Image Avatar */}
+          <div className="hidden sm:block shrink-0">
+            <img
+              src={harryReadingImg}
+              alt="Harry Potter Reading Journal"
+              referrerPolicy="no-referrer"
+              className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-amber-300 shadow-md"
+            />
+          </div>
+
           {/* Student Name & House */}
-          <div className="flex-1 space-y-3">
-            <label className="block text-xs font-serif uppercase tracking-widest text-amber-400 font-bold flex items-center gap-1.5">
-              <User className="w-4 h-4 text-amber-400" /> Student Name (학생 이름 입력)
+          <div className="flex-1 w-full space-y-3">
+            <label className="block text-xs font-serif font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+              <User className="w-4 h-4 text-amber-600" /> 학생 이름 입력 (Student Name)
             </label>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -66,23 +78,23 @@ export const StudentForm: React.FC<StudentFormProps> = ({
                   type="text"
                   value={studentName}
                   onChange={(e) => setStudentName(e.target.value)}
-                  placeholder="예: Harry Potter / 김철수"
-                  className="w-full bg-slate-950/80 text-amber-100 placeholder-slate-500 font-serif text-base sm:text-lg border border-amber-500/50 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/30 transition-all shadow-inner"
+                  placeholder="예: 김호그 / Harry Potter"
+                  className="w-full bg-amber-50/40 text-slate-900 placeholder-slate-400 font-serif text-base sm:text-lg font-bold border-2 border-amber-200 rounded-2xl px-4 py-3 focus:outline-none focus:border-amber-400 focus:bg-white focus:ring-4 focus:ring-amber-100 transition-all shadow-inner"
                 />
               </div>
 
-              <div className="px-4 py-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-serif font-bold text-amber-300 flex items-center gap-2 shrink-0">
-                <span>House:</span>
-                <span className="text-sm font-sans">{studentHouse}</span>
+              <div className="px-4 py-3 rounded-2xl bg-amber-100/80 border border-amber-300 text-xs font-serif font-bold text-amber-900 flex items-center gap-2 shrink-0 shadow-2xs">
+                <span>기숙사 (House):</span>
+                <span className="text-sm font-sans font-extrabold">{studentHouse}</span>
               </div>
             </div>
           </div>
 
           {/* Load Previous Answer Lookup Tool */}
-          <div className="lg:w-80 bg-slate-950/70 p-4 rounded-xl border border-slate-800/80 space-y-2">
-            <div className="flex items-center justify-between text-xs text-amber-300 font-serif font-semibold">
+          <div className="lg:w-80 bg-amber-50/60 p-4 rounded-2xl border border-amber-200 space-y-2">
+            <div className="flex items-center justify-between text-xs text-amber-900 font-serif font-bold">
               <span className="flex items-center gap-1">
-                <History className="w-3.5 h-3.5 text-amber-400" /> 이전 작성 답안 불러오기
+                <History className="w-3.5 h-3.5 text-amber-600" /> 이전 제출 답안 조회
               </span>
             </div>
 
@@ -91,22 +103,22 @@ export const StudentForm: React.FC<StudentFormProps> = ({
                 type="text"
                 value={searchNameInput}
                 onChange={(e) => setSearchNameInput(e.target.value)}
-                placeholder="이름 검색"
-                className="w-full bg-slate-900 text-xs text-slate-100 placeholder-slate-500 border border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-400"
+                placeholder="학생 이름 입력"
+                className="w-full bg-white text-xs text-slate-800 placeholder-slate-400 border border-amber-300 rounded-xl px-3 py-1.5 focus:outline-none focus:border-amber-500"
               />
               <button
                 type="submit"
                 disabled={isSearching || !searchNameInput.trim()}
-                className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 disabled:opacity-50"
+                className="px-3.5 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-900 font-bold rounded-xl text-xs transition-all shrink-0 flex items-center gap-1 disabled:opacity-50 shadow-2xs"
               >
-                <Search className="w-3 h-3" />
+                <Search className="w-3.5 h-3.5" />
                 <span>조회</span>
               </button>
             </form>
 
             {hasPreviousMatch && (
-              <p className="text-xs text-emerald-400 flex items-center gap-1 font-sans">
-                <CheckCircle2 className="w-3 h-3" /> 이전 제출 답안을 성공적으로 불러왔습니다.
+              <p className="text-xs text-emerald-800 font-bold flex items-center gap-1 font-sans">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> 이전 작성 기록을 불러왔습니다!
               </p>
             )}
           </div>
@@ -114,16 +126,22 @@ export const StudentForm: React.FC<StudentFormProps> = ({
         </div>
       </div>
 
-      {/* Progress & Question Instructions Bar */}
-      <div className="flex items-center justify-between px-2 text-xs font-serif text-slate-300">
-        <span className="flex items-center gap-1.5 text-amber-300">
-          <Scroll className="w-4 h-4 text-amber-400" /> Chapter {chapterNumber} Questions ({answeredCount} / 5 Completed)
+      {/* Progress Bar */}
+      <div className="bg-amber-100/60 p-3.5 rounded-2xl border border-amber-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-serif text-slate-700">
+        <span className="flex items-center gap-1.5 font-bold text-amber-900">
+          <Scroll className="w-4 h-4 text-amber-600" /> Chapter {chapterNumber} 독해 문제 답변 작성 ({answeredCount} / 5개 완료)
         </span>
-        <div className="w-32 sm:w-48 bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
-          <div
-            className="bg-gradient-to-r from-amber-500 to-amber-400 h-full transition-all duration-300"
-            style={{ width: `${(answeredCount / 5) * 100}%` }}
-          />
+        
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="w-full sm:w-48 bg-white h-3 rounded-full overflow-hidden border border-amber-300 shadow-inner">
+            <div
+              className="bg-gradient-to-r from-amber-400 via-amber-500 to-rose-400 h-full transition-all duration-300 rounded-full"
+              style={{ width: `${(answeredCount / 5) * 100}%` }}
+            />
+          </div>
+          <span className="font-bold text-amber-800 text-xs shrink-0">
+            {Math.round((answeredCount / 5) * 100)}%
+          </span>
         </div>
       </div>
 
@@ -142,41 +160,41 @@ export const StudentForm: React.FC<StudentFormProps> = ({
       </div>
 
       {/* Submit Section */}
-      <div className="bg-slate-900/90 border border-amber-500/40 rounded-2xl p-6 shadow-2xl backdrop-blur-md text-center space-y-4">
+      <div className="bg-white/95 border-2 border-amber-200/90 rounded-3xl p-6 shadow-xl shadow-amber-100/50 text-center space-y-4">
         <div>
-          <h3 className="text-lg font-serif font-bold text-amber-300 flex items-center justify-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-400" /> 리딩 저널 제출 (Submit Journal)
+          <h3 className="text-lg font-serif font-bold text-slate-800 flex items-center justify-center gap-2">
+            <Sparkles className="w-5 h-5 text-amber-500" /> 리딩 저널 제출하기 (Submit Reading Journal)
           </h3>
-          <p className="text-xs text-slate-400 mt-1 font-sans">
-            제출 시 입력한 내용이 구글 시트 및 교사 데이터베이스에 기록됩니다.
+          <p className="text-xs text-slate-600 mt-1 font-sans">
+            제출된 저널은 호그와트 데이터베이스 및 구글 시트에 자동 보관됩니다.
           </p>
         </div>
 
         <button
           onClick={onSubmitJournal}
           disabled={!isFormComplete || isSubmitting}
-          className={`w-full sm:w-auto px-8 py-4 rounded-xl font-serif font-extrabold text-base sm:text-lg flex items-center justify-center gap-3 transition-all shadow-xl mx-auto border ${
+          className={`w-full sm:w-auto px-8 py-4 rounded-2xl font-serif font-extrabold text-base sm:text-lg flex items-center justify-center gap-3 transition-all shadow-lg mx-auto border-2 ${
             isFormComplete && !isSubmitting
-              ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:scale-105 text-slate-950 border-amber-200 shadow-amber-500/30'
-              : 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed opacity-60'
+              ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-rose-400 hover:scale-105 text-slate-900 border-amber-300 shadow-amber-200 cursor-pointer'
+              : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
           }`}
         >
           {isSubmitting ? (
             <>
-              <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-              <span>구글 시트 저장 중 (Casting Spell...)...</span>
+              <div className="w-5 h-5 border-2 border-slate-800 border-t-transparent rounded-full animate-spin" />
+              <span>저널 저장 중...</span>
             </>
           ) : (
             <>
-              <Send className="w-5 h-5 text-slate-950" />
-              <span>마법 저널 제출하기 (Submit to Google Sheets)</span>
+              <Send className="w-5 h-5 text-slate-900" />
+              <span>✨ 리딩 저널 제출하기 (Submit Journal)</span>
             </>
           )}
         </button>
 
         {!isFormComplete && (
-          <p className="text-xs text-amber-400/90 font-serif italic">
-            * 학생 이름과 5개 질문에 대한 답변 작성을 완료해야 제출 버튼이 활성화됩니다.
+          <p className="text-xs text-amber-800 font-bold italic">
+            💡 학생 이름과 5개 질문에 대한 답변을 모두 작성하면 제출 버튼이 활성화됩니다.
           </p>
         )}
       </div>

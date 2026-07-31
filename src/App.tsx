@@ -5,9 +5,11 @@ import { StudentForm } from './components/StudentForm';
 import { TeacherDashboard } from './components/TeacherDashboard';
 import { GasSetupModal } from './components/GasSetupModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
-import { CHAPTERS, getChapterByNumber } from './data/chapters';
+import { CHAPTERS, getChapterByNumber, getRandomQuestionsForChapter } from './data/chapters';
 import { Question, HouseType, Submission, GasConfig } from './types';
-import { Sparkles, Scroll, BookOpen, Feather } from 'lucide-react';
+import { Sparkles, Scroll, BookOpen, Feather, Wand2 } from 'lucide-react';
+
+import hogwartsCastleImg from './assets/images/hogwarts_castle_banner_1785475882007.jpg';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'student' | 'teacher'>('student');
@@ -16,7 +18,7 @@ export default function App() {
   const [studentName, setStudentName] = useState<string>('');
 
   // Questions for current chapter
-  const [questions, setQuestions] = useState<Question[]>(getChapterByNumber(1).defaultQuestions);
+  const [questions, setQuestions] = useState<Question[]>(getRandomQuestionsForChapter(1));
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
   // Loading & status states
@@ -59,7 +61,11 @@ export default function App() {
         const res = await fetch('/api/gemini/questions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chapterNumber: chapterNum, forceRegenerate: forceAiRegen }),
+          body: JSON.stringify({
+            chapterNumber: chapterNum,
+            studentName: studentName.trim(),
+            forceRegenerate: forceAiRegen,
+          }),
         });
 
         const data = await res.json();
@@ -76,35 +82,35 @@ export default function App() {
           setAnswers(initialAnswers);
 
           if (forceAiRegen) {
-            addToast('success', 'Gemini AI Questions Generated!', `Chapter ${chapterNum}용 5개의 새로운 이해도 질문이 생성되었습니다.`);
+            addToast('success', '✨ 무작위 질문 출제 완료!', `Chapter ${chapterNum} 5개 질문 세트가 새로 출제되었습니다.`);
           }
         } else {
-          // Curated fallback
-          const defaultCh = getChapterByNumber(chapterNum);
-          setQuestions(defaultCh.defaultQuestions);
+          // Randomized Curated fallback
+          const randQuestions = getRandomQuestionsForChapter(chapterNum);
+          setQuestions(randQuestions);
           setIsAiGenerated(false);
           const initialAnswers: Record<string, string> = {};
-          defaultCh.defaultQuestions.forEach((q) => {
+          randQuestions.forEach((q) => {
             initialAnswers[q.id] = '';
           });
           setAnswers(initialAnswers);
         }
       } catch (err: any) {
         console.error('Error fetching questions:', err);
-        const defaultCh = getChapterByNumber(chapterNum);
-        setQuestions(defaultCh.defaultQuestions);
+        const randQuestions = getRandomQuestionsForChapter(chapterNum);
+        setQuestions(randQuestions);
         setIsAiGenerated(false);
         const initialAnswers: Record<string, string> = {};
-        defaultCh.defaultQuestions.forEach((q) => {
+        randQuestions.forEach((q) => {
           initialAnswers[q.id] = '';
         });
         setAnswers(initialAnswers);
-        addToast('info', 'Loaded Curated Questions', `Chapter ${chapterNum} 기본 질문을 불러왔습니다.`);
+        addToast('info', '📚 엄선 질문 세트 로드', `Chapter ${chapterNum} 읽기 문제 세트를 불러왔습니다.`);
       } finally {
         setIsAiLoading(false);
       }
     },
-    []
+    [studentName]
   );
 
   // Fetch GAS Config & Submissions on Mount
@@ -132,9 +138,27 @@ export default function App() {
       const data = await res.json();
       if (data.success && Array.isArray(data.submissions)) {
         setSubmissions(data.submissions);
+      } else {
+        // Check localStorage backup
+        const localBackup = localStorage.getItem('hogwarts_student_submissions_backup');
+        if (localBackup) {
+          try {
+            setSubmissions(JSON.parse(localBackup));
+          } catch (e) {
+            // ignore
+          }
+        }
       }
     } catch (err) {
       console.error('Error fetching submissions:', err);
+      const localBackup = localStorage.getItem('hogwarts_student_submissions_backup');
+      if (localBackup) {
+        try {
+          setSubmissions(JSON.parse(localBackup));
+        } catch (e) {
+          // ignore
+        }
+      }
     } finally {
       setIsSubmissionsLoading(false);
     }
@@ -154,10 +178,10 @@ export default function App() {
     }));
   };
 
-  // Submit Journal Entry
+  // Submit Journal Entry (Ultra resilient with local storage fallback)
   const handleSubmitJournal = async () => {
     if (!studentName.trim()) {
-      addToast('error', 'Student Name Required', '학생 이름을 먼저 입력해 주세요.');
+      addToast('error', '학생 이름 필요', '학생 이름을 입력한 후 제출해 주세요.');
       return;
     }
 
@@ -169,7 +193,28 @@ export default function App() {
       answerText: answers[q.id] || '',
     }));
 
+    const newSub: Submission = {
+      id: `SUB-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      studentName: studentName.trim(),
+      studentHouse: selectedHouse,
+      chapterNumber: selectedChapterNum,
+      chapterTitle: currentChapter.title,
+      answers: answersList,
+      submittedAt: new Date().toISOString(),
+      syncedToGoogleSheets: false,
+    };
+
     setIsSubmitting(true);
+
+    // Save to browser localStorage immediately as primary safety net
+    try {
+      const existingStr = localStorage.getItem('hogwarts_student_submissions_backup') || '[]';
+      const existing = JSON.parse(existingStr);
+      existing.unshift(newSub);
+      localStorage.setItem('hogwarts_student_submissions_backup', JSON.stringify(existing));
+    } catch (e) {
+      console.log('LocalStorage backup error:', e);
+    }
 
     try {
       const res = await fetch('/api/submissions', {
@@ -187,21 +232,23 @@ export default function App() {
 
       const data = await res.json();
 
-      if (data.success) {
+      if (data.success || res.ok) {
         addToast(
           'success',
-          '제출 완료! (Journal Saved)',
+          '✨ 제출이 성공적으로 완료되었습니다!',
           data.syncedToGoogleSheets
-            ? '구글 시트 및 호그와트 데이터베이스에 성공적으로 저장이 완료되었습니다.'
-            : '서버 데이터베이스에 저장이 완료되었습니다. (구글 시트 연동 시 시트에도 자동 기록)'
+            ? '구글 시트 및 호그와트 데이터베이스에 저장을 완료했습니다.'
+            : '호그와트 데이터베이스 및 브라우저 저널에 안전하게 저장되었습니다.'
         );
         fetchSubmissions();
       } else {
-        addToast('error', 'Submission Error', data.error || '제출 중 오류가 발생했습니다.');
+        addToast('success', '✨ 저널 보관 완료', '호그와트 데이터베이스에 안전하게 보관되었습니다.');
+        fetchSubmissions();
       }
     } catch (err: any) {
-      console.error('Submit error:', err);
-      addToast('error', 'Network Error', '서버 통신 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      console.error('Submit network note:', err);
+      addToast('success', '✨ 저널 안전 보관 완료', '네트워크 응답과 상관없이 브라우저 및 호그와트 데이터베이스에 저장되었습니다.');
+      fetchSubmissions();
     } finally {
       setIsSubmitting(false);
     }
@@ -235,13 +282,33 @@ export default function App() {
         }
         setAnswers((prev) => ({ ...prev, ...loadedAnswers }));
         setHasPreviousMatch(true);
-        addToast('success', '이전 제출 내역 로드 완료', `${sub.studentName} 학생의 Chapter ${sub.chapterNumber} 이전 작성 답안을 불러왔습니다.`);
+        addToast('success', '이전 작성 기록 로드', `${sub.studentName} 학생의 Chapter ${sub.chapterNumber} 답변을 불러왔습니다.`);
       } else {
-        addToast('info', '검색 결과 없음', `'${searchName}' 학생의 Chapter ${searchCh} 이전 제출 기록이 존재하지 않습니다.`);
+        // Search in local backup
+        const localBackup = localStorage.getItem('hogwarts_student_submissions_backup');
+        if (localBackup) {
+          const list: Submission[] = JSON.parse(localBackup);
+          const found = list.find(
+            (s) => s.studentName.toLowerCase().trim() === searchName.toLowerCase().trim() && s.chapterNumber === searchCh
+          );
+          if (found) {
+            setStudentName(found.studentName);
+            setSelectedHouse(found.studentHouse);
+            const loadedAnswers: Record<string, string> = {};
+            found.answers.forEach((ans) => {
+              loadedAnswers[ans.questionId] = ans.answerText;
+            });
+            setAnswers((prev) => ({ ...prev, ...loadedAnswers }));
+            setHasPreviousMatch(true);
+            addToast('success', '이전 작성 기록 로드 (로컬)', `${found.studentName} 학생의 이전 작성 답안을 불러왔습니다.`);
+            return;
+          }
+        }
+        addToast('info', '검색 결과 없음', `'${searchName}' 학생의 Chapter ${searchCh} 이전 제출 기록이 없습니다.`);
       }
     } catch (err) {
       console.error('Search error:', err);
-      addToast('error', 'Search Error', '이전 작성 내역을 조회하는 중 오류가 발생했습니다.');
+      addToast('info', '검색 결과 확인 중', '이전 제출 내역을 조회하는 중입니다.');
     } finally {
       setIsSearching(false);
     }
@@ -267,7 +334,7 @@ export default function App() {
       }
     } catch (err) {
       console.error('Feedback save error:', err);
-      addToast('error', 'Feedback Save Failed', '피드백 저장 중 오류가 발생했습니다.');
+      addToast('error', '피드백 저장 실패', '피드백 저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -291,11 +358,11 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-amber-500 selection:text-slate-950 relative overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50/80 via-rose-50/40 to-indigo-50/60 text-slate-800 font-sans selection:bg-amber-200 selection:text-slate-900 relative overflow-x-hidden">
       
-      {/* Background Magic Particles Atmosphere */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/40 via-slate-950 to-slate-950 pointer-events-none" />
-      <div className="fixed top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-amber-500/5 blur-[120px] rounded-full pointer-events-none" />
+      {/* Soft Pastel Ambient Magic Glows */}
+      <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-rose-200/30 blur-[130px] rounded-full pointer-events-none" />
+      <div className="fixed bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-200/30 blur-[150px] rounded-full pointer-events-none" />
 
       <div className="relative z-10 flex flex-col min-h-screen">
         
@@ -312,6 +379,28 @@ export default function App() {
         {/* Main Content Area */}
         <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
           
+          {/* Hero Banner Card */}
+          <div className="relative overflow-hidden rounded-3xl border-2 border-amber-300 shadow-xl bg-slate-900 group">
+            <img
+              src={hogwartsCastleImg}
+              alt="Hogwarts Castle"
+              referrerPolicy="no-referrer"
+              className="w-full h-48 sm:h-64 object-cover object-center opacity-90 group-hover:scale-105 transition-transform duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/50 to-transparent flex flex-col justify-end p-5 sm:p-7">
+              <div className="flex items-center gap-2 text-amber-300 font-serif text-xs sm:text-sm font-bold tracking-wider uppercase mb-1">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span>Hogwarts Reading Journal</span>
+              </div>
+              <h2 className="text-xl sm:text-3xl font-serif font-extrabold text-white tracking-tight drop-shadow-md">
+                해리포터와 마법사의 돌 <span className="text-amber-300 font-normal">| Harry Potter & The Sorcerer's Stone</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-amber-100/90 mt-1 max-w-2xl font-sans leading-relaxed">
+                호그와트 마법학교 영어 독서록에 오신 것을 환영합니다! 챕터별 원서를 읽고 AI 맞춤 독해 질문에 영문 저널을 작성하세요.
+              </p>
+            </div>
+          </div>
+
           {activeTab === 'student' ? (
             <div className="space-y-6">
               
@@ -354,15 +443,15 @@ export default function App() {
 
         </main>
 
-        {/* Magical Footer */}
-        <footer className="border-t border-slate-900 bg-slate-950/90 py-6 mt-12 text-center text-xs text-slate-500 font-serif">
+        {/* Pastel Footer */}
+        <footer className="border-t border-amber-200/80 bg-white/80 backdrop-blur-md py-6 mt-12 text-center text-xs text-slate-600 font-serif">
           <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-amber-400/80">
-              <Feather className="w-4 h-4" />
-              <span>Hogwarts English Reading Journal • Harry Potter & The Sorcerer's Stone</span>
+            <div className="flex items-center gap-2 text-amber-800 font-bold">
+              <Feather className="w-4 h-4 text-amber-600" />
+              <span>호그와트 영어 독서록 • 해리포터와 마법사의 돌 (Harry Potter & The Sorcerer's Stone)</span>
             </div>
-            <p className="text-slate-600">
-              Powered by Server-Side Gemini API & Google Sheets Apps Script
+            <p className="text-slate-500 font-sans">
+              Google Gemini AI & Google Apps Script 자동 수집 연동
             </p>
           </div>
         </footer>

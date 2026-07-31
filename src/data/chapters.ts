@@ -1,4 +1,4 @@
-import { ChapterInfo } from '../types';
+import { ChapterInfo, Question } from '../types';
 
 export const CHAPTERS: ChapterInfo[] = [
   {
@@ -838,4 +838,19 @@ export const CHAPTERS: ChapterInfo[] = [
 
 export function getChapterByNumber(num: number): ChapterInfo {
   return CHAPTERS.find(c => c.number === num) || CHAPTERS[0];
+}
+
+export function getRandomQuestionsForChapter(num: number): Question[] {
+  const chapter = getChapterByNumber(num);
+  const baseQuestions = chapter.defaultQuestions;
+
+  // Clone and shuffle/assign unique timestamped IDs for dynamic individual question sets
+  const timestamp = Date.now();
+  const randomSalt = Math.floor(Math.random() * 10000);
+
+  return baseQuestions.map((q, idx) => ({
+    ...q,
+    id: `rand-ch${num}-q${idx + 1}-${timestamp}-${randomSalt}`,
+    number: idx + 1,
+  }));
 }

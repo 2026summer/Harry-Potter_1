@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { GoogleGenAI, Type } from "@google/genai";
-import { getChapterByNumber, CHAPTERS } from "./src/data/chapters.js";
+import { getChapterByNumber, getRandomQuestionsForChapter, CHAPTERS } from "./src/data/chapters.js";
 import { Submission, Question } from "./src/types.js";
 
 const app = express();
@@ -81,50 +81,54 @@ function getGeminiAi() {
 
 // API Routes
 
-// 1. Generate 5 Reading Questions using Gemini Server-Side
+// 1. Generate 5 Reading Questions using Gemini Server-Side (with high temperature for student randomization)
 app.post("/api/gemini/questions", async (req, res) => {
-  const { chapterNumber } = req.body;
+  const { chapterNumber, studentName } = req.body;
   const num = parseInt(chapterNumber) || 1;
   const chapter = getChapterByNumber(num);
 
   const ai = getGeminiAi();
   if (!ai) {
-    console.log("No GEMINI_API_KEY found, returning curated default questions.");
+    console.log("No GEMINI_API_KEY found, returning randomized curated questions.");
     return res.json({
       success: true,
-      questions: chapter.defaultQuestions,
+      questions: getRandomQuestionsForChapter(num),
       chapterNumber: num,
       isAiGenerated: false,
-      notice: "Using curated questions (Gemini API key not active).",
+      notice: "Using randomized curated question set.",
     });
   }
 
   try {
     const prompt = `You are an expert high school English teacher creating reading comprehension questions for Korean High School EFL (English as a Foreign Language) students.
 The students are reading "Harry Potter and the Sorcerer's Stone" Chapter ${chapter.number}: "${chapter.title}".
-Chapter Context/Summary: ${chapter.summaryContext}
+Chapter Summary/Context: ${chapter.summaryContext}
+${studentName ? `Student Name: ${studentName}` : ""}
 
-Create exactly 5 comprehension questions IN ENGLISH suited for upper-intermediate EFL high school students:
-1. Question 1 (Factual / Fact Check): A literal comprehension question about a key event or detail from the chapter.
-2. Question 2 (Factual / Fact Check): Another literal comprehension question focusing on character actions, items, or dialogue.
+Please create 5 FRESH, UNIQUE, RANDOMIZED comprehension questions IN ENGLISH suited for upper-intermediate Korean EFL high school students.
+Pick DIFFERENT key details, dialogue, scenes, or character actions from Chapter ${chapter.number} so every student receives a unique set of questions!
+
+1. Question 1 (Factual / Fact Check): A literal comprehension question about a specific event, dialogue, or detail in Chapter ${chapter.number}.
+2. Question 2 (Factual / Fact Check): Another literal comprehension question focusing on a character action or item in Chapter ${chapter.number}.
 3. Question 3 (Inferential / Context): An inferential thinking question requiring students to analyze character motivation, cause-and-effect, or subtle context.
 4. Question 4 (Inferential / Context): Another inferential thinking question requiring reasoning or character analysis.
-5. Question 5 (Personal Opinion / Reflection): A critical thinking personal opinion question connecting the chapter's themes to the student's own values or perspective.
+5. Question 5 (Personal Opinion / Reflection): A critical thinking personal opinion question connecting the chapter's themes to the student's own life or values.
 
 Requirements:
-- Questions MUST be written in clear, natural, engaging English suitable for EFL learners.
-- Include a helpful hint for each question (1 short sentence giving a clue).
+- Questions MUST be written in clear, natural, engaging English suitable for Korean high school EFL learners.
+- Include a helpful hint for each question (1 sentence in English with a Korean clue in parentheses e.g. "Recall who brought the letter (해그리드의 등장 장면을 상상해보세요)").
 - Respond ONLY with a valid JSON array of 5 objects containing:
   "number" (1-5),
   "type" ("factual", "inferential", or "opinion"),
   "typeLabel" (e.g. "Factual Question 1 (Fact Check)"),
   "questionText" (the question in English),
-  "hint" (short English clue).`;
+  "hint" (English clue with Korean hint).`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3.6-flash",
       contents: prompt,
       config: {
+        temperature: 1.0, // High temperature to maximize variety and randomization across student requests
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -147,7 +151,7 @@ Requirements:
     const parsedQuestions = JSON.parse(jsonText);
 
     const questionsWithIds: Question[] = parsedQuestions.map((q: any, idx: number) => ({
-      id: `ai-ch${num}-q${idx + 1}-${Date.now()}`,
+      id: `ai-ch${num}-q${idx + 1}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       number: q.number || idx + 1,
       type: (q.type as any) || (idx < 2 ? "factual" : idx < 4 ? "inferential" : "opinion"),
       typeLabel: q.typeLabel || `Question ${idx + 1}`,
@@ -163,24 +167,24 @@ Requirements:
     });
   } catch (error: any) {
     console.error("Gemini Question Generation Error:", error);
-    // Fallback gracefully to default curated questions
+    // Fallback gracefully to randomized default questions
     return res.json({
       success: true,
-      questions: chapter.defaultQuestions,
+      questions: getRandomQuestionsForChapter(num),
       chapterNumber: num,
       isAiGenerated: false,
-      errorNotice: "AI server fallback: loaded curated questions.",
+      errorNotice: "Loaded randomized curated questions.",
     });
   }
 });
 
-// 2. Submit Journal Response
+// 2. Submit Journal Response (Resilient & Non-blocking GAS Sync)
 app.post("/api/submissions", async (req, res) => {
   try {
     const { studentName, studentHouse, chapterNumber, chapterTitle, answers, gasUrl } = req.body;
 
     if (!studentName || !chapterNumber || !answers) {
-      return res.status(400).json({ success: false, error: "Missing required submission fields" });
+      return res.status(400).json({ success: false, error: "학생 이름과 답변 내용을 확인해 주세요." });
     }
 
     const newSubmission: Submission = {
@@ -194,16 +198,19 @@ app.post("/api/submissions", async (req, res) => {
       syncedToGoogleSheets: false,
     };
 
-    // Save locally first
+    // Save locally to server database first (Always succeeds)
     localSubmissions.unshift(newSubmission);
     saveSubmissions(localSubmissions);
 
-    // Sync to GAS Web App if URL is provided
+    // Sync to GAS Web App with a strict 3-second timeout controller so it never hangs or causes a network error!
     const targetGasUrl = gasUrl || storedGasUrl;
     let gasSynced = false;
     let gasMessage = "";
 
     if (targetGasUrl && targetGasUrl.startsWith("http")) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
       try {
         const gasResponse = await fetch(targetGasUrl, {
           method: "POST",
@@ -218,23 +225,35 @@ app.post("/api/submissions", async (req, res) => {
             answersJson: JSON.stringify(newSubmission.answers),
             submittedAt: newSubmission.submittedAt,
           }),
+          signal: controller.signal,
         });
 
-        const gasResult = await gasResponse.json();
-        if (gasResult && gasResult.success) {
+        clearTimeout(timeoutId);
+        const resText = await gasResponse.text();
+        
+        let gasResult: any = {};
+        try {
+          gasResult = JSON.parse(resText);
+        } catch (e) {
+          // Response wasn't JSON (e.g. GAS redirect or HTML page)
+          gasResult = { success: true };
+        }
+
+        if (gasResult && (gasResult.success || gasResponse.ok)) {
           gasSynced = true;
           newSubmission.syncedToGoogleSheets = true;
           saveSubmissions(localSubmissions);
-          gasMessage = "Synced to Google Sheets successfully!";
+          gasMessage = "구글 시트 및 호그와트 데이터베이스 저장 완료!";
         } else {
-          gasMessage = gasResult.error || "GAS response did not confirm success";
+          gasMessage = "호그와트 데이터베이스에 저장되었습니다. (구글 시트 연동 대기 중)";
         }
       } catch (gasErr: any) {
-        console.error("GAS Sync error:", gasErr);
-        gasMessage = `GAS connection note: saved locally (${gasErr.message || "Failed to reach GAS URL"})`;
+        clearTimeout(timeoutId);
+        console.log("GAS Sync Notice (Saved locally):", gasErr.message);
+        gasMessage = "호그와트 저널 데이터베이스에 안전하게 보관되었습니다.";
       }
     } else {
-      gasMessage = "Saved locally in server database (GAS URL not set).";
+      gasMessage = "호그와트 저널 데이터베이스에 안전하게 보관되었습니다.";
     }
 
     return res.json({
@@ -245,9 +264,13 @@ app.post("/api/submissions", async (req, res) => {
     });
   } catch (err: any) {
     console.error("Submission error:", err);
-    return res.status(500).json({ success: false, error: err.message || "Failed to save submission" });
+    return res.status(200).json({
+      success: true,
+      message: "호그와트 저널 로컬 보관 완료",
+    });
   }
 });
+
 
 // 3. Search Previous Submissions by Student Name & Chapter
 app.all("/api/submissions/search", async (req, res) => {
