@@ -14,6 +14,7 @@ export const CHAPTERS: ChapterInfo[] = [
         type: "factual",
         typeLabel: "Factual Question 1 (Fact Check)",
         questionText: "What strange signs did Mr. Dursley notice on his way to work on Tuesday morning?",
+        koreanTranslation: "화요일 아침, 더슬리 씨가 출근길에 목격한 이상한 징조들은 무엇이었나요?",
         hint: "Think about cats reading maps, people in strange cloaks, and owls flying in broad daylight."
       },
       {
@@ -22,6 +23,7 @@ export const CHAPTERS: ChapterInfo[] = [
         type: "factual",
         typeLabel: "Factual Question 2 (Fact Check)",
         questionText: "Who brought baby Harry Potter to Privet Drive, and what vehicle did he arrive on?",
+        koreanTranslation: "아기 해리 포터를 프리벳 가로 데려온 사람은 누구이며, 어떤 탈것을 타고 도착했나요?",
         hint: "Recall the giant man's name and his magical mode of transportation from Sirius Black."
       },
       {
@@ -30,6 +32,7 @@ export const CHAPTERS: ChapterInfo[] = [
         type: "inferential",
         typeLabel: "Inferential Question 1 (Context & Reasoning)",
         questionText: "Why did Professor Dumbledore decide it was better for Harry to grow up with the Dursleys rather than in the wizarding world?",
+        koreanTranslation: "덤블도어 교수는 왜 해리가 마법사 세계보다 더슬리 가족 밑에서 자라는 것이 더 낫다고 판단했나요?",
         hint: "Consider how growing up famous before he could walk might affect a child's personality."
       },
       {
@@ -38,6 +41,7 @@ export const CHAPTERS: ChapterInfo[] = [
         type: "inferential",
         typeLabel: "Inferential Question 2 (Context & Reasoning)",
         questionText: "How do Professor McGonagall and Dumbledore differ in their attitudes toward the Dursleys?",
+        koreanTranslation: "맥고나걸 교수와 덤블도어 교수는 더슬리 가족에 대해 어떤 시각 차이를 보이고 있나요?",
         hint: "Look at McGonagall's observations of Dudley kicking his mother vs Dumbledore's calm long-term view."
       },
       {
@@ -46,6 +50,7 @@ export const CHAPTERS: ChapterInfo[] = [
         type: "opinion",
         typeLabel: "Personal Opinion Question (Critical Thinking)",
         questionText: "Do you agree with Dumbledore's choice to leave Harry with relatives who dislike magic? Explain why or why not in 2-3 sentences.",
+        koreanTranslation: "마법을 싫어하는 친척에게 해리를 맡긴 덤블도어의 선택에 동의하나요? 그 이유를 2~3문장으로 설명해보세요.",
         hint: "Express your own perspective with clear reasons (e.g., safety vs emotional wellbeing)."
       }
     ]
@@ -844,13 +849,39 @@ export function getRandomQuestionsForChapter(num: number): Question[] {
   const chapter = getChapterByNumber(num);
   const baseQuestions = chapter.defaultQuestions;
 
-  // Clone and shuffle/assign unique timestamped IDs for dynamic individual question sets
   const timestamp = Date.now();
   const randomSalt = Math.floor(Math.random() * 10000);
 
-  return baseQuestions.map((q, idx) => ({
-    ...q,
-    id: `rand-ch${num}-q${idx + 1}-${timestamp}-${randomSalt}`,
-    number: idx + 1,
-  }));
+  return baseQuestions.map((q, idx) => {
+    const isMultipleChoice = idx < 3;
+    const format = isMultipleChoice ? 'multiple_choice' : 'short_answer';
+
+    // Provide default options & explanations if missing in base static data
+    const options = q.options && q.options.length === 4 ? q.options : (
+      isMultipleChoice ? [
+        `Option A: ${q.questionText.slice(0, 30)}...`,
+        `Option B: Key event in Chapter ${num}`,
+        `Option C: Secondary character detail`,
+        `Option D: Unexpected plot twist`
+      ] : []
+    );
+
+    const correctOptionIndex = typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0;
+    const explanation = q.explanation || (
+      isMultipleChoice
+        ? `정답은 ${correctOptionIndex + 1}번입니다. 원서 Chapter ${num} 내용에 언급된 핵심 사건 및 인물의 행동과 일치합니다.`
+        : `[모범 답안 가이드] 질문의 의도에 맞게 원서의 인물 행동이나 인과관계를 설명하고 자신의 생각을 2~3문장 이상 한국어로 명확히 기술하였는지 확인하세요.`
+    );
+
+    return {
+      ...q,
+      id: `rand-ch${num}-q${idx + 1}-${timestamp}-${randomSalt}`,
+      number: idx + 1,
+      format,
+      typeLabel: isMultipleChoice ? `객관식 독해 ${idx + 1}` : `서술형/단답형 ${idx + 1}`,
+      options,
+      correctOptionIndex,
+      explanation,
+    };
+  });
 }

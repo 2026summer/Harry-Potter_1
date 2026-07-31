@@ -5,6 +5,7 @@ import { StudentForm } from './components/StudentForm';
 import { TeacherDashboard } from './components/TeacherDashboard';
 import { GasSetupModal } from './components/GasSetupModal';
 import { AdminAuthModal } from './components/AdminAuthModal';
+import { SelfScoreReportModal } from './components/SelfScoreReportModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { CHAPTERS, getChapterByNumber, getRandomQuestionsForChapter } from './data/chapters';
 import { Question, HouseType, Submission, GasConfig, DifficultyLevel } from './types';
@@ -26,6 +27,9 @@ export default function App() {
     return sessionStorage.getItem('hogwarts_admin_unlocked') === 'true';
   });
   const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState<boolean>(false);
+
+  // Self Score Report Modal State
+  const [isSelfScoreModalOpen, setIsSelfScoreModalOpen] = useState<boolean>(false);
 
   // Questions for current chapter
   const [questions, setQuestions] = useState<Question[]>(getRandomQuestionsForChapter(1));
@@ -281,22 +285,23 @@ export default function App() {
       if (data.success || res.ok) {
         addToast(
           'success',
-          '✨ 제출이 성공적으로 완료되었습니다!',
+          '✨ 제출 및 채점 완료!',
           data.syncedToGoogleSheets
-            ? '구글 시트 및 호그와트 데이터베이스에 저장을 완료했습니다.'
-            : '호그와트 데이터베이스 및 브라우저 저널에 안전하게 저장되었습니다.'
+            ? '구글 시트 저장 및 자동 채점 결과가 생성되었습니다.'
+            : '저장 완료! 자동 채점 점수 및 해설을 확인하세요.'
         );
         fetchSubmissions();
       } else {
-        addToast('success', '✨ 저널 보관 완료', '호그와트 데이터베이스에 안전하게 보관되었습니다.');
+        addToast('success', '✨ 저널 보관 완료', '자동 채점 점수 및 해설을 확인해보세요.');
         fetchSubmissions();
       }
     } catch (err: any) {
       console.error('Submit network note:', err);
-      addToast('success', '✨ 저널 안전 보관 완료', '네트워크 응답과 상관없이 브라우저 및 호그와트 데이터베이스에 저장되었습니다.');
+      addToast('success', '✨ 저널 저장 완료', '자동 채점 점수 및 해설을 확인해보세요.');
       fetchSubmissions();
     } finally {
       setIsSubmitting(false);
+      setIsSelfScoreModalOpen(true);
     }
   };
 
@@ -439,7 +444,7 @@ export default function App() {
                 <span>Hogwarts Reading Journal</span>
               </div>
               <h2 className="text-xl sm:text-3xl font-serif font-extrabold text-white tracking-tight drop-shadow-md">
-                해리포터와 마법사의 돌 <span className="text-amber-300 font-normal">| Harry Potter & The Sorcerer's Stone</span>
+                2026학년도 2학기 영어Ⅱ 수행평가 <span className="text-amber-300 font-medium">| Harry Potter & The Sorcerer's Stone</span>
               </h2>
               <p className="text-xs sm:text-sm text-amber-100/90 mt-1 max-w-2xl font-sans leading-relaxed">
                 호그와트 마법학교 영어 독서록에 오신 것을 환영합니다! 챕터별 원서를 읽고 AI 맞춤 독해 질문에 영문 저널을 작성하세요.
@@ -520,6 +525,18 @@ export default function App() {
         isOpen={isAdminAuthModalOpen}
         onClose={() => setIsAdminAuthModalOpen(false)}
         onSuccess={handleAdminAuthSuccess}
+      />
+
+      {/* Self Score & Answer Feedback Modal */}
+      <SelfScoreReportModal
+        isOpen={isSelfScoreModalOpen}
+        onClose={() => setIsSelfScoreModalOpen(false)}
+        studentName={studentName || '학생'}
+        studentHouse={selectedHouse}
+        chapterNumber={selectedChapterNum}
+        questions={questions}
+        answers={answers}
+        onResetAnswers={() => setAnswers({})}
       />
 
       {/* Toast Notifications */}

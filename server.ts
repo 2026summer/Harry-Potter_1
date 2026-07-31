@@ -124,30 +124,33 @@ ${studentName ? `Student Name: ${studentName}` : ""}
 
 ${difficultyGuide}
 
-Please create 5 FRESH, UNIQUE, RANDOMIZED comprehension questions IN ENGLISH for Chapter ${chapter.number}.
-Pick DIFFERENT key details, dialogue, scenes, or character actions so every generation is unique!
+Format Mix Requirement (50% Multiple Choice / 50% Short Answer or Essay):
+- Questions 1, 2, 3: "multiple_choice" (4-option multiple choice questions in English, with 1 correct answer index 0-3, and a detailed Korean explanation of why the answer is correct).
+- Questions 4, 5: "short_answer" (Open-ended short answer or reflective essay questions where students write their answers in Korean).
 
-1. Question 1 (Factual / Fact Check): A literal comprehension question about a specific event, dialogue, or detail.
-2. Question 2 (Factual / Fact Check): Another literal comprehension question focusing on a character action or item.
-3. Question 3 (Inferential / Context): An inferential thinking question analyzing character motivation or cause-and-effect.
-4. Question 4 (Inferential / Context): Another inferential thinking question requiring reasoning or character analysis.
-5. Question 5 (Personal Opinion / Reflection): A critical thinking personal opinion question connecting themes to student reflection.
+Important Language Rule:
+- The question texts and multiple-choice options are written in clear, engaging English matching the requested ${level} difficulty level.
+- Provide a natural Korean translation ("koreanTranslation") for every question text.
+- Provide a detailed Korean explanation ("explanation") for every question (explaining the correct option for multiple choice, or providing a model answer example & key points in Korean for short answer questions).
+- Students will answer all questions in Korean (한국어).
 
-Requirements:
-- Questions MUST be written in clear, engaging English matching the requested ${level} difficulty level.
-- Include a helpful hint for each question (1 sentence in English with a Korean clue in parentheses e.g. "Recall who brought the letter (해그리드의 등장 장면을 상상해보세요)").
-- Respond ONLY with a valid JSON array of 5 objects containing:
-  "number" (1-5),
-  "type" ("factual", "inferential", or "opinion"),
-  "typeLabel" (e.g. "Factual Question 1"),
-  "questionText" (the question in English),
-  "hint" (English clue with Korean hint).`;
+Respond ONLY with a valid JSON array of 5 objects containing:
+1. "number" (1-5)
+2. "type" ("factual", "inferential", or "opinion")
+3. "format" ("multiple_choice" or "short_answer")
+4. "typeLabel" (e.g. "객관식 독해 1", "서술형 추론 4")
+5. "questionText" (the question in English)
+6. "koreanTranslation" (natural Korean translation of questionText)
+7. "options" (array of 4 string options in English ONLY for multiple_choice, or empty array [] for short_answer)
+8. "correctOptionIndex" (integer 0, 1, 2, or 3 for multiple_choice, or -1 for short_answer)
+9. "explanation" (detailed answer explanation and model answer guide in Korean)
+10. "hint" (English clue with Korean hint) `;
 
     const response = await ai.models.generateContent({
       model: "gemini-3.6-flash",
       contents: prompt,
       config: {
-        temperature: 1.0, // High temperature to maximize variety and randomization
+        temperature: 0.9,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -156,11 +159,30 @@ Requirements:
             properties: {
               number: { type: Type.INTEGER },
               type: { type: Type.STRING },
+              format: { type: Type.STRING },
               typeLabel: { type: Type.STRING },
               questionText: { type: Type.STRING },
+              koreanTranslation: { type: Type.STRING },
+              options: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
+              correctOptionIndex: { type: Type.INTEGER },
+              explanation: { type: Type.STRING },
               hint: { type: Type.STRING },
             },
-            required: ["number", "type", "typeLabel", "questionText", "hint"],
+            required: [
+              "number",
+              "type",
+              "format",
+              "typeLabel",
+              "questionText",
+              "koreanTranslation",
+              "options",
+              "correctOptionIndex",
+              "explanation",
+              "hint",
+            ],
           },
         },
       },
@@ -173,8 +195,13 @@ Requirements:
       id: `ai-ch${num}-q${idx + 1}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       number: q.number || idx + 1,
       type: (q.type as any) || (idx < 2 ? "factual" : idx < 4 ? "inferential" : "opinion"),
-      typeLabel: q.typeLabel || `Question ${idx + 1}`,
+      format: (q.format as any) || (idx < 3 ? "multiple_choice" : "short_answer"),
+      typeLabel: q.typeLabel || (idx < 3 ? `객관식 질문 ${idx + 1}` : `서술형 질문 ${idx + 1}`),
       questionText: q.questionText,
+      koreanTranslation: q.koreanTranslation || "",
+      options: Array.isArray(q.options) ? q.options : [],
+      correctOptionIndex: typeof q.correctOptionIndex === "number" ? q.correctOptionIndex : 0,
+      explanation: q.explanation || "",
       hint: q.hint || "",
       difficulty: level,
     }));

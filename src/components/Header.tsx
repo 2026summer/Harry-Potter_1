@@ -63,10 +63,10 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 font-serif">
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>호그와트 마법학교 영어 독서록 (Hogwarts Reading Journal)</span>
+                <span>호그와트 영어 독서록 (Hogwarts Reading Journal)</span>
               </div>
               <h1 className="text-lg sm:text-2xl font-serif font-extrabold text-slate-800 tracking-tight">
-                해리포터와 마법사의 돌 <span className="text-amber-600 font-normal">| Harry Potter & The Sorcerer's Stone</span>
+                2026학년도 2학기 영어Ⅱ 수행평가 <span className="text-amber-600 font-medium">| Harry Potter & The Sorcerer's Stone</span>
               </h1>
             </div>
           </div>

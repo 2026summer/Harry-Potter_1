@@ -1,12 +1,18 @@
 export type QuestionType = 'factual' | 'inferential' | 'opinion';
+export type QuestionFormat = 'multiple_choice' | 'short_answer';
 export type DifficultyLevel = 'EASY' | 'MEDIUM' | 'HARD';
 
 export interface Question {
   id: string;
   number: number;
   type: QuestionType;
-  typeLabel: string; // e.g. "Fact Check (2/2)", "Inferential Thinking (2/2)", "Personal Opinion (1/1)"
+  format?: QuestionFormat; // 'multiple_choice' or 'short_answer'
+  typeLabel: string;
   questionText: string;
+  koreanTranslation?: string;
+  options?: string[]; // 4 options for multiple_choice
+  correctOptionIndex?: number; // 0-based index for correct option
+  explanation?: string; // Answer explanation and breakdown in Korean
   hint?: string;
   sampleKeywords?: string[];
   difficulty?: DifficultyLevel;

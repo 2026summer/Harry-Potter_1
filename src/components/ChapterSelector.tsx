@@ -63,48 +63,69 @@ export const ChapterSelector: React.FC<ChapterSelectorProps> = ({
 
           {/* Difficulty Level Buttons (5 cols) */}
           <div className="md:col-span-5">
-            <label className="block text-xs font-serif font-bold uppercase tracking-wider text-amber-900 mb-2 flex items-center gap-1.5">
-              <Gauge className="w-4 h-4 text-amber-600" /> 질문 난이도 선택 (Difficulty Level)
+            <label className="block text-xs font-serif font-bold uppercase tracking-wider text-amber-900 mb-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Gauge className="w-4 h-4 text-amber-600" /> 질문 난이도 선택
+              </span>
+              <span className="text-[11px] font-sans font-normal text-amber-700">(버튼을 클릭하세요)</span>
             </label>
 
-            <div className="grid grid-cols-3 gap-1.5 bg-amber-50/80 p-1.5 rounded-2xl border-2 border-amber-200 shadow-inner">
+            <div className="grid grid-cols-3 gap-2 bg-amber-100/50 p-2 rounded-2xl border-2 border-amber-300/80 shadow-inner">
+              {/* EASY Button */}
               <button
                 type="button"
                 onClick={() => onSelectDifficulty('EASY')}
-                className={`py-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center ${
+                className={`px-2 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border-2 flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-95 ${
                   selectedDifficulty === 'EASY'
-                    ? 'bg-emerald-500 text-white shadow-md scale-102'
-                    : 'text-slate-700 hover:bg-white/80'
+                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white border-emerald-700 ring-2 ring-emerald-300 shadow-emerald-200 scale-102'
+                    : 'bg-white hover:bg-emerald-50 text-slate-700 border-emerald-300 hover:border-emerald-500 hover:shadow-md'
                 }`}
               >
-                <span>난이도: 하</span>
-                <span className="text-[10px] opacity-90 font-normal">쉬운 어휘/기초</span>
+                <div className="flex items-center gap-1">
+                  <span>🌱</span>
+                  <span>난이도: 하</span>
+                </div>
+                <span className={`text-[10px] font-sans ${selectedDifficulty === 'EASY' ? 'text-emerald-100 font-semibold' : 'text-slate-500'}`}>
+                  쉬운 어휘/기초
+                </span>
               </button>
 
+              {/* MEDIUM Button */}
               <button
                 type="button"
                 onClick={() => onSelectDifficulty('MEDIUM')}
-                className={`py-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center ${
+                className={`px-2 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border-2 flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-95 ${
                   selectedDifficulty === 'MEDIUM'
-                    ? 'bg-amber-500 text-slate-950 shadow-md scale-102 font-extrabold'
-                    : 'text-slate-700 hover:bg-white/80'
+                    ? 'bg-gradient-to-b from-amber-400 to-amber-500 text-slate-950 border-amber-600 ring-2 ring-amber-300 shadow-amber-200 scale-102 font-extrabold'
+                    : 'bg-white hover:bg-amber-50 text-slate-700 border-amber-300 hover:border-amber-500 hover:shadow-md'
                 }`}
               >
-                <span>난이도: 중</span>
-                <span className="text-[10px] opacity-90 font-normal">고교 표준</span>
+                <div className="flex items-center gap-1">
+                  <span>⚡</span>
+                  <span>난이도: 중</span>
+                </div>
+                <span className={`text-[10px] font-sans ${selectedDifficulty === 'MEDIUM' ? 'text-amber-950 font-bold' : 'text-slate-500'}`}>
+                  고교 표준
+                </span>
               </button>
 
+              {/* HARD Button */}
               <button
                 type="button"
                 onClick={() => onSelectDifficulty('HARD')}
-                className={`py-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center ${
+                className={`px-2 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border-2 flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-95 ${
                   selectedDifficulty === 'HARD'
-                    ? 'bg-rose-500 text-white shadow-md scale-102'
-                    : 'text-slate-700 hover:bg-white/80'
+                    ? 'bg-gradient-to-b from-rose-500 to-rose-600 text-white border-rose-700 ring-2 ring-rose-300 shadow-rose-200 scale-102'
+                    : 'bg-white hover:bg-rose-50 text-slate-700 border-rose-300 hover:border-rose-500 hover:shadow-md'
                 }`}
               >
-                <span>난이도: 상</span>
-                <span className="text-[10px] opacity-90 font-normal">심화 추론</span>
+                <div className="flex items-center gap-1">
+                  <span>🔥</span>
+                  <span>난이도: 상</span>
+                </div>
+                <span className={`text-[10px] font-sans ${selectedDifficulty === 'HARD' ? 'text-rose-100 font-semibold' : 'text-slate-500'}`}>
+                  심화 추론
+                </span>
               </button>
             </div>
           </div>
