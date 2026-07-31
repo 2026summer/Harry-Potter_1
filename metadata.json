@@ -1,0 +1,6 @@
+{
+  "name": "Hogwarts English Reading Journal",
+  "description": "An interactive AI-powered English reading journal for Harry Potter and the Sorcerer's Stone with high-school EFL comprehension questions, Google Sheets submission, and teacher review dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
